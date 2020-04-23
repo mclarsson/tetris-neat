@@ -63,6 +63,7 @@
 import math
 import random
 import os
+import itertools
 
 BEST_SCORE_FILE_NAME = "best_score"
 
@@ -146,27 +147,60 @@ class Board:
 
         if self._can_move(new_pos, self.current_block.shape):
             self.current_block_pos = new_pos
+            return True
         elif direction == "down":
             self._land_block()
             self._burn()
             self._place_new_block()
+        return False
 
     def drop(self):
         """Move to very very bottom"""
 
-        i = 1
-        while self._can_move((self.current_block_pos[0] + 1, self.current_block_pos[1]), self.current_block.shape):
-            i += 1
-            self.move_block("down")
+        while self.move_block("down"):
+            pass
 
-        self._land_block()
-        self._burn()
-        self._place_new_block()
+        # while self._can_move((self.current_block_pos[0] + 1, self.current_block_pos[1]), self.current_block.shape):
+        #     self.move_block("down")
+
+        # self._land_block()
+        # self._burn()
+        # self._place_new_block()
+
+    def drop_at(self, pos, rot):
+        for _ in range(rot):
+            self.rotate_block()
+
+        while self.move_block("left"):
+            pass
+
+        i = 0
+        while self.move_block("right") and i < pos:
+            i += 1
+
+        self.drop()
+
+    def play_with_player(self, net, round_limit=1000):
+        i = 0
+        while not self.is_game_over() and i < round_limit:
+            i += 1
+            # inp = tuple(itertools.chain.from_iterable(self.board[4:]))
+            # out = net.activate(inp)
+            # act = max(enumerate(out), key=lambda x: x[1])[0]
+            net(self)
+
+        if i >= round_limit:
+            print("--------round limit reached--------")
+
+        return self.score
 
     def _get_new_board(self):
         """Create new empty board"""
 
         return [[0 for _ in range(self.width)] for _ in range(self.height)]
+
+    def _any_block_in_top_section(self):
+        return any(x == 1 for x in itertools.chain.from_iterable(self.board[4:]))
 
     def _place_new_block(self):
         """Place new block and generate the next one"""

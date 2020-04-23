@@ -10,9 +10,12 @@
 import curses
 import board
 import time
+import pickle
+import neat
+import itertools
 
-BOARD_WIDTH = 11
-BOARD_HEIGHT = 17
+BOARD_WIDTH = 10
+BOARD_HEIGHT = 20
 
 GAME_WINDOW_WIDTH = 2 * BOARD_WIDTH + 2
 GAME_WINDOW_HEIGHT = BOARD_HEIGHT + 2
@@ -200,6 +203,13 @@ if __name__ == "__main__":
 
         start = time.time()
 
+        with open("winner", "rb") as f:
+            winner = pickle.load(f)
+            config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                                 neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                                 "./config-feedforward")
+            net = neat.nn.FeedForwardNetwork.create(winner, config)
+
         quit_game = False
         while not quit_game:
             key_event = game_window.getch()
@@ -215,20 +225,37 @@ if __name__ == "__main__":
 
             if not game_board.is_game_over():
                 if not pause:
-                    if time.time() - start >= 1 / game_board.level:
-                        game_board.move_block("down")
-                        start = time.time()
+                    # if time.time() - start >= 1 / game_board.level:
+                    #     game_board.move_block("down")
+                    #     start = time.time()
 
-                    if key_event == curses.KEY_UP:
-                        game_board.rotate_block()
-                    elif key_event == curses.KEY_DOWN:
-                        game_board.move_block("down")
-                    elif key_event == curses.KEY_LEFT:
-                        game_board.move_block("left")
-                    elif key_event == curses.KEY_RIGHT:
-                        game_board.move_block("right")
-                    elif key_event == ord(" "):
+                    # if key_event == curses.KEY_UP:
+                    #     game_board.rotate_block()
+                    # elif key_event == curses.KEY_DOWN:
+                    #     game_board.move_block("down")
+                    # elif key_event == curses.KEY_LEFT:
+                    #     game_board.move_block("left")
+                    # elif key_event == curses.KEY_RIGHT:
+                    #     game_board.move_block("right")
+                    # elif key_event == ord(" "):
+                    #     game_board.drop()
+
+                    inp = tuple(itertools.chain.from_iterable(game_board.board))
+                    out = net.activate(inp)
+                    act = max(enumerate(out), key=lambda x: x[1])[0]
+                    if act == 0:
                         game_board.drop()
+                    elif act == 1:
+                        game_board.move_block("left")
+                    elif act == 2:
+                        game_board.move_block("right")
+                    elif act == 3:
+                        game_board.rotate_block()
+                    else:
+                        raise Exception("pfft")
+                    game_board.move_block("down")
+
+                    time.sleep(0.25)
                 if key_event == ord("p"):
                     pause = not pause
                     game_window.nodelay(not pause)
