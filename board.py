@@ -160,13 +160,6 @@ class Board:
         while self.move_block("down"):
             pass
 
-        # while self._can_move((self.current_block_pos[0] + 1, self.current_block_pos[1]), self.current_block.shape):
-        #     self.move_block("down")
-
-        # self._land_block()
-        # self._burn()
-        # self._place_new_block()
-
     def drop_at(self, pos, rot):
         for _ in range(rot):
             self.rotate_block()
@@ -175,32 +168,42 @@ class Board:
             pass
 
         i = 0
-        while self.move_block("right") and i < pos:
+        while i < pos and self.move_block("right"):
             i += 1
 
         self.drop()
 
-    def play_with_player(self, net, round_limit=1000):
+    def play_with_network(self, net, round_limit=1000):
         i = 0
         while not self.is_game_over() and i < round_limit:
             i += 1
-            # inp = tuple(itertools.chain.from_iterable(self.board[4:]))
-            # out = net.activate(inp)
-            # act = max(enumerate(out), key=lambda x: x[1])[0]
-            net(self)
+            inp = tuple(itertools.chain.from_iterable(self.board[4:]))
+            out = net.activate(inp)
+            pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
+            rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
+            self.drop_at(pos, rot)
 
         if i >= round_limit:
             print("--------round limit reached--------")
 
-        return self.score
+        score = self.lines * 100
+
+        for rad in self.board[4:]:
+            score += 0.3*(math.exp(0.5*sum(rad)) - 1)
+
+        return score
 
     def _get_new_board(self):
         """Create new empty board"""
 
         return [[0 for _ in range(self.width)] for _ in range(self.height)]
 
+    def _print_board(self):
+        from pprint import pprint
+        pprint(self.board)
+
     def _any_block_in_top_section(self):
-        return any(x == 1 for x in itertools.chain.from_iterable(self.board[4:]))
+        return any(x == 1 for x in itertools.chain.from_iterable(self.board[:4]))
 
     def _place_new_block(self):
         """Place new block and generate the next one"""
@@ -216,9 +219,9 @@ class Board:
         col_pos = math.floor((self.width - size[1]) / 2)
         self.current_block_pos = [0, col_pos]
 
-        if self._check_overlapping(self.current_block_pos, self.current_block.shape):
+        if self._check_overlapping(self.current_block_pos, self.current_block.shape) or self._any_block_in_top_section():
             self.game_over = True
-            self._save_best_score()
+            # self._save_best_score()
         else:
             self.score += 5
 
@@ -286,10 +289,11 @@ class Board:
         """Get random block"""
 
         block = Block(random.randint(0, len(block_shapes) - 1))
+        # block = Block(3)
 
         # flip it randomly
-        if random.getrandbits(1):
-            block.flip()
+        # if random.getrandbits(1):
+        #     block.flip()
 
         return block
 

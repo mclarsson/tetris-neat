@@ -240,20 +240,11 @@ if __name__ == "__main__":
                     # elif key_event == ord(" "):
                     #     game_board.drop()
 
-                    inp = tuple(itertools.chain.from_iterable(game_board.board))
+                    inp = tuple(itertools.chain.from_iterable(game_board.board[4:]))
                     out = net.activate(inp)
-                    act = max(enumerate(out), key=lambda x: x[1])[0]
-                    if act == 0:
-                        game_board.drop()
-                    elif act == 1:
-                        game_board.move_block("left")
-                    elif act == 2:
-                        game_board.move_block("right")
-                    elif act == 3:
-                        game_board.rotate_block()
-                    else:
-                        raise Exception("pfft")
-                    game_board.move_block("down")
+                    pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
+                    rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
+                    game_board.drop_at(pos, rot)
 
                     time.sleep(0.25)
                 if key_event == ord("p"):

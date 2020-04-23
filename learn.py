@@ -16,30 +16,10 @@ xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
 
 
 def eval_genomes(genome, config):
-    # for genome_id, genome in genomes:
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    # for xi, xo in zip(xor_inputs, xor_outputs):
-    #     output = net.activate(xi)
-    #     genome.fitness -= (output[0] - xo[0]) ** 2
-    def play(b):
-        inp = tuple(itertools.chain.from_iterable(b.board))
-        out = net.activate(inp)
-        act = max(enumerate(out), key=lambda x: x[1])[0]
-        if act == 0:
-            b.drop()
-        elif act == 1:
-            b.move_block("left")
-        elif act == 2:
-            b.move_block("right")
-        elif act == 3:
-            b.rotate_block()
-        else:
-            raise Exception("pfft")
-        b.move_block("down")
-
     b = board.Board(20, 10)
     b.start()
-    return float(b.play_with_player(play))
+    return float(b.play_with_network(net))
 
 
 def run(config_file):
@@ -59,7 +39,7 @@ def run(config_file):
 
     # Run for up to 300 generations.
     para = neat.parallel.ParallelEvaluator(6, eval_genomes)
-    winner = p.run(para.evaluate, 300)
+    winner = p.run(para.evaluate, 100)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
