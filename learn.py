@@ -17,7 +17,7 @@ xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
 
 def eval_genomes(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    b = board.Board(20, 10)
+    b = board.Board(10, 10)
     b.start()
     return float(b.play_with_network(net))
 

@@ -177,7 +177,9 @@ class Board:
         i = 0
         while not self.is_game_over() and i < round_limit:
             i += 1
-            inp = tuple(itertools.chain.from_iterable(self.board[4:]))
+            block_inp = [0]*len(block_shapes)
+            block_inp[self.current_block.block_type] = 1
+            inp = tuple(itertools.chain(itertools.chain.from_iterable(self.board[4:]), block_inp))
             out = net.activate(inp)
             pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
             rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
@@ -186,12 +188,17 @@ class Board:
         if i >= round_limit:
             print("--------round limit reached--------")
 
-        score = self.lines * 100
+        # score = self.lines * 100
 
-        for rad in self.board[4:]:
-            score += 0.3*(math.exp(0.5*sum(rad)) - 1)
+        # for i, rad in enumerate(self.board[4:]):
+        #     # asd = 0.002*(math.exp(0.5*i) - 1)
+        #     # if i >= 10:
+        #     #     asd = 3
+        #     # else:
+        #     #     asd = -10
+        #     score += 0.3*(math.exp(0.5*sum(rad)) - 1)
 
-        return score
+        return self.score
 
     def _get_new_board(self):
         """Create new empty board"""
@@ -289,7 +296,7 @@ class Board:
         """Get random block"""
 
         block = Block(random.randint(0, len(block_shapes) - 1))
-        # block = Block(3)
+        # block = Block(0)
 
         # flip it randomly
         # if random.getrandbits(1):
@@ -304,6 +311,7 @@ class Block:
     def __init__(self, block_type):
         self.shape = block_shapes[block_type]
         self.color = block_type + 1
+        self.block_type = block_type
 
     def flip(self):
         self.shape = list(map(list, self.shape[::-1]))

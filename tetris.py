@@ -15,7 +15,7 @@ import neat
 import itertools
 
 BOARD_WIDTH = 10
-BOARD_HEIGHT = 20
+BOARD_HEIGHT = 10
 
 GAME_WINDOW_WIDTH = 2 * BOARD_WIDTH + 2
 GAME_WINDOW_HEIGHT = BOARD_HEIGHT + 2
@@ -240,7 +240,9 @@ if __name__ == "__main__":
                     # elif key_event == ord(" "):
                     #     game_board.drop()
 
-                    inp = tuple(itertools.chain.from_iterable(game_board.board[4:]))
+                    block_inp = [0]*len(board.block_shapes)
+                    block_inp[game_board.current_block.block_type] = 1
+                    inp = tuple(itertools.chain(itertools.chain.from_iterable(game_board.board[4:]), block_inp))
                     out = net.activate(inp)
                     pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
                     rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
