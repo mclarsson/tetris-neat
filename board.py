@@ -164,12 +164,10 @@ class Board:
         for _ in range(rot):
             self.rotate_block()
 
-        while self.move_block("left"):
-            pass
+        size = Block.get_size(self.current_block.shape)
+        xpos = min(pos, self.width - size[1])
 
-        i = 0
-        while i < pos and self.move_block("right"):
-            i += 1
+        self.current_block_pos = [0, xpos]
 
         self.drop()
 
@@ -198,7 +196,7 @@ class Board:
         #     #     asd = -10
         #     score += 0.3*(math.exp(0.5*sum(rad)) - 1)
 
-        return self.score
+        return i
 
     def _get_new_board(self):
         """Create new empty board"""
