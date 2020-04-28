@@ -89,9 +89,10 @@ block_shapes = [
 class Board:
     """Board representation"""
 
-    def __init__(self, height, width):
+    def __init__(self, height, width, random=None):
         self.height = height
         self.width = width
+        self.random = random
         self.board = self._get_new_board()
 
         self.current_block_pos = None
@@ -117,7 +118,7 @@ class Board:
         self.score = 0
         self.lines = 0
         self.level = 1
-        self.best_score = self._read_best_score()
+        self.best_score = 0#self._read_best_score()
 
         self._place_new_block()
 
@@ -131,6 +132,8 @@ class Board:
 
         if self._can_move(self.current_block_pos, rotated_shape):
             self.current_block.shape = rotated_shape
+            self.current_block.rotation += 1
+            self.current_block.rotation %= 4
 
     def move_block(self, direction):
         """Try to move block"""
@@ -177,7 +180,9 @@ class Board:
             i += 1
             block_inp = [0]*len(block_shapes)
             block_inp[self.current_block.block_type] = 1
-            inp = tuple(itertools.chain(itertools.chain.from_iterable(self.board[4:]), block_inp))
+            rot_inp = [0, 0, 0, 0]
+            rot_inp[self.current_block.rotation] = 1
+            inp = tuple(itertools.chain(self.get_heights(), block_inp, rot_inp))
             out = net.activate(inp)
             pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
             rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
@@ -196,7 +201,16 @@ class Board:
         #     #     asd = -10
         #     score += 0.3*(math.exp(0.5*sum(rad)) - 1)
 
-        return i
+        return self.score
+
+    def get_heights(self):
+        heights = [0]*self.width
+        for i in range(self.width):
+            for j in range(4, self.height):
+                if self.board[j][i] == 1:
+                    heights[i] = self.height - j
+                    break
+        return heights
 
     def _get_new_board(self):
         """Create new empty board"""
@@ -289,11 +303,11 @@ class Board:
                 return int(file.read())
         return 0
 
-    @staticmethod
-    def _get_new_block():
+    def _get_new_block(self):
         """Get random block"""
 
-        block = Block(random.randint(0, len(block_shapes) - 1))
+        r = self.random if self.random else random
+        block = Block(r.randint(0, len(block_shapes) - 1))
         # block = Block(0)
 
         # flip it randomly
@@ -310,12 +324,10 @@ class Block:
         self.shape = block_shapes[block_type]
         self.color = block_type + 1
         self.block_type = block_type
+        self.rotation = 0
 
     def flip(self):
         self.shape = list(map(list, self.shape[::-1]))
-
-    def _get_rotated(self):
-        return list(map(list, zip(*self.shape[::-1])))
 
     def size(self):
         """Get size of the block"""

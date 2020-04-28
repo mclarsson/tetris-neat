@@ -9,6 +9,7 @@ import visualize
 import board
 import itertools
 import pickle
+import random
 
 # 2-input XOR inputs and expected outputs.
 xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
@@ -17,10 +18,13 @@ xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
 
 def eval_genomes(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
+    # r = random.Random(12)
     b = board.Board(10, 10)
-    b.start()
-    return float(b.play_with_network(net))
-
+    fit = 0
+    for _ in range(5):
+        b.start()
+        fit += float(b.play_with_network(net))
+    return fit / 5
 
 def run(config_file):
     # Load configuration.
@@ -39,7 +43,7 @@ def run(config_file):
 
     # Run for up to 300 generations.
     para = neat.parallel.ParallelEvaluator(6, eval_genomes)
-    winner = p.run(para.evaluate, 100)
+    winner = p.run(para.evaluate, 10000)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))

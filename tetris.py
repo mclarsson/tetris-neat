@@ -242,7 +242,9 @@ if __name__ == "__main__":
 
                     block_inp = [0]*len(board.block_shapes)
                     block_inp[game_board.current_block.block_type] = 1
-                    inp = tuple(itertools.chain(itertools.chain.from_iterable(game_board.board[4:]), block_inp))
+                    rot_inp = [0, 0, 0, 0]
+                    rot_inp[game_board.current_block.rotation] = 1
+                    inp = tuple(itertools.chain(game_board.get_heights(), block_inp, rot_inp))
                     out = net.activate(inp)
                     pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
                     rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
