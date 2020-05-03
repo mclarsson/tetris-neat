@@ -130,12 +130,12 @@ class Board:
     def rotate_block(self):
         rotated_shape = list(map(list, zip(*self.current_block.shape[::-1])))
 
-        if self._can_move(self.current_block_pos, rotated_shape):
-            self.current_block.shape = rotated_shape
-            self.current_block.rotation += 1
-            self.current_block.rotation %= 4
+        # if self._can_move(self.current_block_pos, rotated_shape):
+        self.current_block.shape = rotated_shape
+        self.current_block.rotation += 1
+        self.current_block.rotation %= 4
 
-    def move_block(self, direction):
+    def move_block(self, direction, fejk=False):
         """Try to move block"""
 
         pos = self.current_block_pos
@@ -151,57 +151,118 @@ class Board:
         if self._can_move(new_pos, self.current_block.shape):
             self.current_block_pos = new_pos
             return True
-        elif direction == "down":
+        elif not fejk and direction == "down":
             self._land_block()
             self._burn()
             self._place_new_block()
         return False
 
-    def drop(self):
+    def drop(self, fejk=False):
         """Move to very very bottom"""
 
-        while self.move_block("down"):
+        while self.move_block("down", fejk):
             pass
 
-    def drop_at(self, pos, rot):
+    def drop_at(self, pos, rot, fejk=False):
+        # TODO: gör ingenting om det är illegal för att slippa göra samma sak flera ggr
+        # place in top mid
+        size = Block.get_size(self.current_block.shape)
+        col_pos = math.floor((self.width - size[1]) / 2)
+        self.current_block_pos = [0, col_pos]
+
+        # rotate rot times
         for _ in range(rot):
             self.rotate_block()
 
+        # place at pos
         size = Block.get_size(self.current_block.shape)
         xpos = min(pos, self.width - size[1])
-
         self.current_block_pos = [0, xpos]
 
-        self.drop()
+        self.drop(fejk=fejk)
+
+    def _evaluate(self):
+        self._land_block(remove=False)
+
+        # landing height
+        landing_height = self.current_block_pos[0] # TODO: räkna mitt i
+
+        # rows eliminated
+        rows_eliminated = self._burn(fejk=True)
+
+        # transitions
+        row_trans = self._row_transitions()
+        col_trans = self._column_transitions()
+
+        holes = self._holes()
+        wells = self._well()
+
+        self._land_block(remove=True)
+
+        return (landing_height, rows_eliminated, row_trans, col_trans, holes, wells)
 
     def play_with_network(self, net, round_limit=1000):
         i = 0
         while not self.is_game_over() and i < round_limit:
             i += 1
-            block_inp = [0]*len(block_shapes)
-            block_inp[self.current_block.block_type] = 1
-            rot_inp = [0, 0, 0, 0]
-            rot_inp[self.current_block.rotation] = 1
-            inp = tuple(itertools.chain(self.get_heights(), block_inp, rot_inp))
-            out = net.activate(inp)
-            pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
-            rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
-            self.drop_at(pos, rot)
+            best_rot = None
+            best_pos = None
+            best_fit = None
+            for rot in range(4):
+                for pos in range(self.width):
+                    self.drop_at(pos, 1, fejk=True)
+                    net_inp = self._evaluate()
+                    fit = net.activate(net_inp)
+                    if best_fit is None or fit[0] > best_fit:
+                        best_fit = fit[0]
+                        best_rot = rot
+                        best_pos = pos
+
+            self.drop_at(best_pos, best_rot, fejk=False)
 
         if i >= round_limit:
             print("--------round limit reached--------")
 
-        # score = self.lines * 100
-
-        # for i, rad in enumerate(self.board[4:]):
-        #     # asd = 0.002*(math.exp(0.5*i) - 1)
-        #     # if i >= 10:
-        #     #     asd = 3
-        #     # else:
-        #     #     asd = -10
-        #     score += 0.3*(math.exp(0.5*sum(rad)) - 1)
-
         return self.score
+
+    def _row_transitions(self):
+        transitions = 0
+        for r in self.board:
+            for c in r[1:]:
+                if r[c-1] != r[c]:
+                    transitions += 1
+        return transitions
+
+    def _column_transitions(self):
+        transitions = 0
+        for c in range(self.width):
+            for r in range(5, self.height):
+                if self.board[r-1][c] != self.board[r][c]:
+                    transitions += 1
+        return transitions
+
+    def _holes(self):
+        # TODO: definitionen av hole?
+        holes = 0
+        for c in range(self.width):
+            found = False
+            for r in range(4, self.height):
+                if self.board[r][c] == 1:
+                    found = True
+                elif found and self.board[r][c] == 0:
+                    holes += 1
+        return holes
+
+    def _well(self):
+        well = 0
+        for c in range(2, self.width):
+            for r in range(4, self.height):
+                row = self.board[r]
+                if row[c-1] == 1:
+                    break
+                if row[c-2] == 1 and row[c-1] == 0 and row[c] == 1:
+                    well += 1
+        return well
 
     def get_heights(self):
         heights = [0]*self.width
@@ -244,27 +305,31 @@ class Board:
         else:
             self.score += 5
 
-    def _land_block(self):
+    def _land_block(self, remove=False):
         """Put block to the board and generate a new one"""
 
         size = Block.get_size(self.current_block.shape)
         for row in range(size[0]):
             for col in range(size[1]):
                 if self.current_block.shape[row][col] == 1:
-                    self.board[self.current_block_pos[0] + row][self.current_block_pos[1] + col] = 1
+                    self.board[self.current_block_pos[0] + row][self.current_block_pos[1] + col] = 0 if remove else 1
 
-    def _burn(self):
+    def _burn(self, fejk=False):
         """Remove matched lines"""
 
+        lines = 0
         for row in range(self.height):
             if all(col != 0 for col in self.board[row]):
-                for r in range(row, 0, -1):
-                    self.board[r] = self.board[r - 1]
-                self.board[0] = [0 for _ in range(self.width)]
-                self.score += 100
-                self.lines += 1
-                if self.lines % 10 == 0:
-                    self.level += 1
+                lines += 1
+                if not fejk:
+                    for r in range(row, 0, -1):
+                        self.board[r] = self.board[r - 1]
+                    self.board[0] = [0 for _ in range(self.width)]
+                    self.score += 100
+                    self.lines += 1
+                    if self.lines % 10 == 0:
+                        self.level += 1
+        return lines
 
     def _check_overlapping(self, pos, shape):
         """If current block overlaps any other on the board"""
@@ -311,8 +376,8 @@ class Board:
         # block = Block(0)
 
         # flip it randomly
-        # if random.getrandbits(1):
-        #     block.flip()
+        if random.getrandbits(1):
+            block.flip()
 
         return block
 

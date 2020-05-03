@@ -15,7 +15,7 @@ import neat
 import itertools
 
 BOARD_WIDTH = 10
-BOARD_HEIGHT = 10
+BOARD_HEIGHT = 20
 
 GAME_WINDOW_WIDTH = 2 * BOARD_WIDTH + 2
 GAME_WINDOW_HEIGHT = BOARD_HEIGHT + 2
@@ -240,15 +240,20 @@ if __name__ == "__main__":
                     # elif key_event == ord(" "):
                     #     game_board.drop()
 
-                    block_inp = [0]*len(board.block_shapes)
-                    block_inp[game_board.current_block.block_type] = 1
-                    rot_inp = [0, 0, 0, 0]
-                    rot_inp[game_board.current_block.rotation] = 1
-                    inp = tuple(itertools.chain(game_board.get_heights(), block_inp, rot_inp))
-                    out = net.activate(inp)
-                    pos = max(enumerate(out[:10]), key=lambda x: x[1])[0]
-                    rot = max(enumerate(out[10:]), key=lambda x: x[1])[0]
-                    game_board.drop_at(pos, rot)
+                    best_rot = None
+                    best_pos = None
+                    best_fit = None
+                    for rot in range(4):
+                        for pos in range(game_board.width):
+                            game_board.drop_at(pos, 1, fejk=True)
+                            net_inp = game_board._evaluate()
+                            fit = net.activate(net_inp)
+                            if best_fit is None or fit[0] > best_fit:
+                                best_fit = fit[0]
+                                best_rot = rot
+                                best_pos = pos
+
+                    game_board.drop_at(best_pos, best_rot, fejk=False)
 
                     time.sleep(0.25)
                 if key_event == ord("p"):

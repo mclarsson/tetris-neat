@@ -19,12 +19,12 @@ xor_outputs = [   (0.0,),     (1.0,),     (1.0,),     (0.0,)]
 def eval_genomes(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
     # r = random.Random(12)
-    b = board.Board(10, 10)
+    b = board.Board(20, 10)
     fit = 0
-    for _ in range(5):
+    for _ in range(1):
         b.start()
         fit += float(b.play_with_network(net))
-    return fit / 5
+    return fit / 1
 
 def run(config_file):
     # Load configuration.
@@ -43,7 +43,10 @@ def run(config_file):
 
     # Run for up to 300 generations.
     para = neat.parallel.ParallelEvaluator(6, eval_genomes)
-    winner = p.run(para.evaluate, 10000)
+    winner = p.run(para.evaluate, 100)
+
+    # with open("winner", "rb") as f:
+    #     winner = pickle.load(f)
 
     # Display the winning genome.
     print('\nBest genome:\n{!s}'.format(winner))
@@ -51,15 +54,16 @@ def run(config_file):
     with open("winner", "wb") as f:
         pickle.dump(winner, f)
 
-    # Show output of the most fit genome against training data.
-    # print('\nOutput:')
-    # winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-    # for xi, xo in zip(xor_inputs, xor_outputs):
-    #     output = winner_net.activate(xi)
-    #     print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
-
-    # node_names = {-1:'A', -2: 'B', 0:'A XOR B'}
-    # visualize.draw_net(config, winner, True, node_names=node_names)
+    node_names = {
+        -1: 'landing_height',
+        -2: 'rows_eliminated',
+        -3: 'row_trans',
+        -4: 'col_trans',
+        -5: 'holes',
+        -6: 'wells',
+        0:  'output'
+    }
+    visualize.draw_net(config, winner, True, node_names=node_names)
     visualize.plot_stats(stats, ylog=False, view=True)
     visualize.plot_species(stats, view=True)
 
