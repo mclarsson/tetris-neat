@@ -208,8 +208,8 @@ class Board:
             best_rot = None
             best_pos = None
             best_fit = None
-            for rot in range(4):
-                for pos in range(self.width):
+            for pos in range(self.width):
+                for rot in range(1, 5):
                     self.drop_at(pos, 1, fejk=True)
                     net_inp = self._evaluate()
                     fit = net.activate(net_inp)
