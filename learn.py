@@ -43,7 +43,7 @@ def run(config_file):
 
     # Run for up to 300 generations.
     para = neat.parallel.ParallelEvaluator(6, eval_genomes)
-    winner = p.run(para.evaluate, 25)
+    winner = p.run(para.evaluate, 50)
 
     # with open("winner", "rb") as f:
     #     winner = pickle.load(f)

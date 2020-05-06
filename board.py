@@ -203,7 +203,7 @@ class Board:
 
     def play_with_network(self, net, round_limit=10000):
         i = 0
-        while not self.is_game_over() and i < round_limit:
+        while not self.is_game_over():# and i < round_limit:
             i += 1
             best_rot = None
             best_pos = None
@@ -220,8 +220,8 @@ class Board:
 
             self.drop_at(best_pos, best_rot, fejk=False)
 
-        if i >= round_limit:
-            print("--------round limit reached--------")
+        # if i >= round_limit:
+        #     print("--------round limit reached--------")
 
         return self.score
 
@@ -246,14 +246,14 @@ class Board:
 
     def _column_transitions(self, rows_eliminated_index):
         transitions = 0
-        prevouis_row = None 
         for c in range(self.width):
+            previous_row = None
             for r in range(4, self.height):
                 if r in rows_eliminated_index:
                     continue
-                if prevouis_row is not None and prevouis_row[c] != self.board[r][c]:
+                if previous_row is not None and previous_row[c] != self.board[r][c]:
                     transitions += 1
-                prevouis_row = self.board[r]
+                previous_row = self.board[r]
         return transitions
 
     def _holes(self, rows_eliminated_index):
@@ -270,7 +270,6 @@ class Board:
                     holes += 1
         return holes
 
-
     def _well(self, rows_eliminated_index):
         well = 0
         for c in range(self.width):
@@ -278,7 +277,7 @@ class Board:
                 row = self.board[r]
                 if r in rows_eliminated_index:
                     continue
-                if row[c] is 1:
+                if row[c] == 1:
                     break
                 if c == 0 and row[c] == 0 and row[c+1] == 1:
                     well += 1
@@ -287,16 +286,6 @@ class Board:
                 elif c != 0 and c != self.width -1 and row[c-1] == 1 and row[c] == 0 and row[c+1] == 1:
                     well += 1
         return well
-
-
-    def get_heights(self):
-        heights = [0]*self.width
-        for i in range(self.width):
-            for j in range(4, self.height):
-                if self.board[j][i] == 1:
-                    heights[i] = self.height - j
-                    break
-        return heights
 
     def _get_new_board(self):
         """Create new empty board"""
