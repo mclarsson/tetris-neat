@@ -184,22 +184,22 @@ class Board:
     def _evaluate(self):
         self._land_block(remove=False)
 
-        # landing height
-        landing_height = self.current_block_pos[0] # TODO: räkna mitt i
-
         # rows eliminated
-        rows_eliminated = self._burn(fejk=True)
+        rows_eliminated_index = self._burn(fejk=True)
+
+        # landing height
+        landing_height = self._landing_height(rows_eliminated_index)
 
         # transitions
-        row_trans = self._row_transitions()
-        col_trans = self._column_transitions()
+        row_trans = self._row_transitions(rows_eliminated_index)
+        col_trans = self._column_transitions(rows_eliminated_index)
 
-        holes = self._holes()
-        wells = self._well()
+        holes = self._holes(rows_eliminated_index)
+        wells = self._well(rows_eliminated_index)
 
         self._land_block(remove=True)
 
-        return (landing_height, rows_eliminated, row_trans, col_trans, holes, wells)
+        return (landing_height, len(rows_eliminated_index), row_trans, col_trans, holes, wells)
 
     def play_with_network(self, net, round_limit=1000):
         i = 0
@@ -225,44 +225,69 @@ class Board:
 
         return self.score
 
-    def _row_transitions(self):
+    def _landing_height(self, rows_eliminated_index):
+        height_reduce = 0
+        height_index = self.current_block_pos[0]
+        for r in rows_eliminated_index:
+            if r > height_index:
+                height_reduce += 1
+        return self.height - (height_reduce + height_index)
+
+    def _row_transitions(self, rows_eliminated_index):
         transitions = 0
-        for r in self.board:
-            for c in r[1:]:
-                if r[c-1] != r[c]:
+        for r in range(self.height):
+            if r in rows_eliminated_index:
+                continue
+            row = self.board[r]
+            for c in row[1:]:
+                if row[c-1] != row[c]:
                     transitions += 1
         return transitions
 
-    def _column_transitions(self):
+    def _column_transitions(self, rows_eliminated_index):
         transitions = 0
         for c in range(self.width):
             for r in range(5, self.height):
-                if self.board[r-1][c] != self.board[r][c]:
+                if r in rows_eliminated_index:
+                    continue
+                elif r-1 in rows_eliminated_index and self.board[r-2][c] != self.board[r][c]:
+                    transitions += 1
+                elif self.board[r-1][c] != self.board[r][c]:
                     transitions += 1
         return transitions
 
-    def _holes(self):
+    def _holes(self, rows_eliminated_index):
         # TODO: definitionen av hole?
         holes = 0
         for c in range(self.width):
             found = False
             for r in range(4, self.height):
-                if self.board[r][c] == 1:
+                if r in rows_eliminated_index:
+                    continue
+                elif self.board[r][c] == 1:
                     found = True
                 elif found and self.board[r][c] == 0:
                     holes += 1
         return holes
 
-    def _well(self):
+
+    def _well(self, rows_eliminated_index):
         well = 0
-        for c in range(2, self.width):
+        for c in range(self.width):
             for r in range(4, self.height):
                 row = self.board[r]
-                if row[c-1] == 1:
+                if r in rows_eliminated_index:
+                    continue
+                if row[c] is 1:
                     break
-                if row[c-2] == 1 and row[c-1] == 0 and row[c] == 1:
+                if c is 0 and row[c] is 0 and row[c+1] is 1:
+                    well += 1
+                elif c is self.width -1 and row[c-1] is 1 and row[c] is 0:
+                    well += 1
+                elif row[c-1] is 1 and row[c] is 0 and row[c+1] is 1:
                     well += 1
         return well
+
 
     def get_heights(self):
         heights = [0]*self.width
@@ -317,10 +342,10 @@ class Board:
     def _burn(self, fejk=False):
         """Remove matched lines"""
 
-        lines = 0
+        line_index = []
         for row in range(self.height):
             if all(col != 0 for col in self.board[row]):
-                lines += 1
+                line_index.append(row)
                 if not fejk:
                     for r in range(row, 0, -1):
                         self.board[r] = self.board[r - 1]
@@ -329,7 +354,7 @@ class Board:
                     self.lines += 1
                     if self.lines % 10 == 0:
                         self.level += 1
-        return lines
+        return line_index
 
     def _check_overlapping(self, pos, shape):
         """If current block overlaps any other on the board"""
