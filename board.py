@@ -201,7 +201,7 @@ class Board:
 
         return (landing_height, len(rows_eliminated_index), row_trans, col_trans, holes, wells)
 
-    def play_with_network(self, net, round_limit=1000):
+    def play_with_network(self, net, round_limit=10000):
         i = 0
         while not self.is_game_over() and i < round_limit:
             i += 1
@@ -229,7 +229,7 @@ class Board:
         height_reduce = 0
         height_index = self.current_block_pos[0]
         for r in rows_eliminated_index:
-            if r > height_index:
+            if r >= height_index:
                 height_reduce += 1
         return self.height - (height_reduce + height_index)
 
@@ -239,21 +239,21 @@ class Board:
             if r in rows_eliminated_index:
                 continue
             row = self.board[r]
-            for c in row[1:]:
+            for c in range(1, self.width):
                 if row[c-1] != row[c]:
                     transitions += 1
         return transitions
 
     def _column_transitions(self, rows_eliminated_index):
         transitions = 0
+        prevouis_row = None 
         for c in range(self.width):
-            for r in range(5, self.height):
+            for r in range(4, self.height):
                 if r in rows_eliminated_index:
                     continue
-                elif r-1 in rows_eliminated_index and self.board[r-2][c] != self.board[r][c]:
+                if prevouis_row is not None and prevouis_row[c] != self.board[r][c]:
                     transitions += 1
-                elif self.board[r-1][c] != self.board[r][c]:
-                    transitions += 1
+                prevouis_row = self.board[r]
         return transitions
 
     def _holes(self, rows_eliminated_index):
@@ -280,11 +280,11 @@ class Board:
                     continue
                 if row[c] is 1:
                     break
-                if c is 0 and row[c] is 0 and row[c+1] is 1:
+                if c == 0 and row[c] == 0 and row[c+1] == 1:
                     well += 1
-                elif c is self.width -1 and row[c-1] is 1 and row[c] is 0:
+                elif c == self.width -1 and row[c-1] == 1 and row[c] == 0:
                     well += 1
-                elif row[c-1] is 1 and row[c] is 0 and row[c+1] is 1:
+                elif c != 0 and c != self.width -1 and row[c-1] == 1 and row[c] == 0 and row[c+1] == 1:
                     well += 1
         return well
 
