@@ -210,6 +210,9 @@ if __name__ == "__main__":
                                  "./config-feedforward")
             net = neat.nn.FeedForwardNetwork.create(winner, config)
 
+        with open("winner_swarm", "rb") as f:
+            metrics = pickle.load(f)
+
         quit_game = False
         while not quit_game:
             key_event = game_window.getch()
@@ -222,6 +225,8 @@ if __name__ == "__main__":
 
             if key_event == ord("q"):
                 quit_game = True
+
+            # metrics = [-0.81226141, 0.99081329, -2.15965451, -2.43684026, -4.00623758, -0.22146256]
 
             if not game_board.is_game_over():
                 if not pause:
@@ -247,7 +252,7 @@ if __name__ == "__main__":
                         for rot in range(1, 5):
                             game_board.drop_at(pos, 1, fejk=True)
                             net_inp = game_board._evaluate()
-                            fit = net.activate(net_inp)
+                            fit = game_board.eval_fitness(net_inp, metrics) # net._activate(net_inp)
                             if best_fit is None or fit[0] > best_fit:
                                 best_fit = fit[0]
                                 best_rot = rot

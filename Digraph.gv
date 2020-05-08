@@ -1,0 +1,14 @@
+digraph {
+	node [fontsize=9 height=0.2 shape=circle width=0.2]
+	landing_height [fillcolor=lightgray shape=box style=filled]
+	rows_eliminated [fillcolor=lightgray shape=box style=filled]
+	row_trans [fillcolor=lightgray shape=box style=filled]
+	col_trans [fillcolor=lightgray shape=box style=filled]
+	holes [fillcolor=lightgray shape=box style=filled]
+	wells [fillcolor=lightgray shape=box style=filled]
+	output [fillcolor=lightblue style=filled]
+	landing_height -> output [color=red penwidth=0.3906874993386562 style=solid]
+	holes -> output [color=red penwidth=0.7026316344533885 style=solid]
+	wells -> output [color=red penwidth=0.3285750716475916 style=solid]
+	rows_eliminated -> output [color=red penwidth=0.2536838662631607 style=solid]
+}

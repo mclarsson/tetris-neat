@@ -63,6 +63,7 @@
 import math
 import random
 import os
+import sys
 import itertools
 
 BEST_SCORE_FILE_NAME = "best_score"
@@ -201,7 +202,24 @@ class Board:
 
         return (landing_height, len(rows_eliminated_index), row_trans, col_trans, holes, wells)
 
-    def play_with_network(self, net, round_limit=10000):
+    def eval_fitness(self, input, metrics):
+        sum = 0;
+        for k, val in enumerate(input):
+            sum += val * metrics[k]
+
+        try:
+            fitness = [1 / (1 + math.exp(-sum))]
+            return fitness
+        except OverflowError:
+            print(OverflowError)
+            print(sum)
+            print(input)
+            print(metrics)
+            print(sys.exc_info()[0])
+
+        exit(0)
+
+    def play_with_network(self, net=None, metrics=None, round_limit=10000):
         i = 0
         while not self.is_game_over():# and i < round_limit:
             i += 1
@@ -212,7 +230,12 @@ class Board:
                 for rot in range(1, 5):
                     self.drop_at(pos, 1, fejk=True)
                     net_inp = self._evaluate()
-                    fit = net.activate(net_inp)
+
+                    if net is None and metrics is not None:
+                        fit = self.eval_fitness(net_inp, metrics);
+                    else:
+                        fit = net.activate(net_inp)
+
                     if best_fit is None or fit[0] > best_fit:
                         best_fit = fit[0]
                         best_rot = rot

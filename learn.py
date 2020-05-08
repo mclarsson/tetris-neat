@@ -23,7 +23,7 @@ def eval_genomes(genome, config):
     fit = 0
     for _ in range(1):
         b.start()
-        fit += float(b.play_with_network(net))
+        fit += float(b.play_with_network(net=net))
     return fit / 1
 
 def run(config_file):
