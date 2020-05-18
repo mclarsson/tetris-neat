@@ -201,10 +201,8 @@ class Board:
 
         return (landing_height, len(rows_eliminated_index), row_trans, col_trans, holes, wells)
 
-    def play_with_network(self, net, round_limit=10000):
-        i = 0
-        while not self.is_game_over():# and i < round_limit:
-            i += 1
+    def play_with_network(self, net, score_limit=5000000):
+        while not self.is_game_over():# and self.score < score_limit:
             best_rot = None
             best_pos = None
             best_fit = None
@@ -219,9 +217,6 @@ class Board:
                         best_pos = pos
 
             self.drop_at(best_pos, best_rot, fejk=False)
-
-        # if i >= round_limit:
-        #     print("--------round limit reached--------")
 
         return self.score
 

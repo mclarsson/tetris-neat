@@ -10,6 +10,7 @@ import board
 import itertools
 import pickle
 import random
+import sys
 
 # 2-input XOR inputs and expected outputs.
 xor_inputs = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)]
@@ -43,7 +44,7 @@ def run(config_file):
 
     # Run for up to 300 generations.
     para = neat.parallel.ParallelEvaluator(6, eval_genomes)
-    winner = p.run(para.evaluate, 50)
+    winner = p.run(para.evaluate, 30)
 
     # with open("winner", "rb") as f:
     #     winner = pickle.load(f)
@@ -54,18 +55,23 @@ def run(config_file):
     with open("winner", "wb") as f:
         pickle.dump(winner, f)
 
-    node_names = {
-        -1: 'landing_height',
-        -2: 'rows_eliminated',
-        -3: 'row_trans',
-        -4: 'col_trans',
-        -5: 'holes',
-        -6: 'wells',
-        0:  'output'
-    }
-    visualize.draw_net(config, winner, True, node_names=node_names)
+    # node_names = {
+    #     -1: 'landing_height',
+    #     -2: 'rows_eliminated',
+    #     -3: 'row_trans',
+    #     -4: 'col_trans',
+    #     -5: 'holes',
+    #     -6: 'wells',
+    #     0:  'output'
+    # }
+    # visualize.draw_net(config, winner, True, node_names=node_names)
     visualize.plot_stats(stats, ylog=False, view=True)
-    visualize.plot_species(stats, view=True)
+    # visualize.plot_species(stats, view=True)
+
+    if len(sys.argv) >= 2:
+        print("writing to '{}'".format(sys.argv[1]))
+        with open(sys.argv[1], "wb") as f:
+            pickle.dump((winner, stats), f)
 
 if __name__ == '__main__':
     # Determine path to configuration file. This path manipulation is
