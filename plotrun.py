@@ -3,6 +3,7 @@ import pickle
 import visualize
 import matplotlib.pyplot as plt
 import matplotlib
+import neat
 import collections
 import os
 import re
@@ -63,19 +64,22 @@ def main_plot_single():
         exit(1)
 
     with open(sys.argv[1], "rb") as f:
-        _winner, stats = pickle.load(f)
+        winner, stats = pickle.load(f)
 
-    # node_names = {
-    #     -1: 'landing_height',
-    #     -2: 'rows_eliminated',
-    #     -3: 'row_trans',
-    #     -4: 'col_trans',
-    #     -5: 'holes',
-    #     -6: 'wells',
-    #     0:  'output'
-    # }
-    # visualize.draw_net(config, winner, True, node_names=node_names)
-    visualize.plot_stats(stats, ylog=False, view=True, filename=None)
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                         "config-feedforward")
+    node_names = {
+        -1: 'landing_height',
+        -2: 'rows_eliminated',
+        -3: 'row_trans',
+        -4: 'col_trans',
+        -5: 'holes',
+        -6: 'wells',
+        0:  'output'
+    }
+    visualize.draw_net(config, winner, True, node_names=node_names)
+    # visualize.plot_stats(stats, ylog=False, view=True, filename=None)
 
 if __name__ == "__main__":
-   main()
+   main_plot_single()

@@ -1,12 +1,8 @@
 python plotrun.py\
-       data/everything\
-       data/holes_landingHeight_colTrans_rowTrans_wells\
-       data/holes_rows_landingHeight_rowTrans_wells\
-       data/holes_rows_landingHeight_wells_3\
-       data/holes_rows_landingHeight_colTrans_wells\
+       data/holes_rows_landingHeight\
+       data/holes_rows\
+       data/rows_landingHeight\
        --\
-       all\
-       -r\
-       '-ct'\
-       '-ct, -rt'\
-       '-rt' &
+       hrl\
+       hr\
+       rl &
