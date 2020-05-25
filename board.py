@@ -202,10 +202,13 @@ class Board:
 
         return (landing_height, len(rows_eliminated_index), row_trans, col_trans, holes, wells)
 
-    def eval_fitness(self, input, metrics):
+    def eval_fitness(self, input, weights):
         sum = 0;
         for k, val in enumerate(input):
-            sum += val * metrics[k]
+            sum += val * weights[k]
+
+        # Add bias
+        sum += weights[-1]    
 
         try:
             fitness = [1 / (1 + math.exp(-sum))]
@@ -214,12 +217,15 @@ class Board:
             print(OverflowError)
             print(sum)
             print(input)
-            print(metrics)
+            print(weights)
             print(sys.exc_info()[0])
 
         exit(0)
 
-    def play_with_network(self, net=None, metrics=None, round_limit=10000):
+    def play_with_network(self, net=None, weights=None, round_limit=10000):
+        """
+        net is set to null when using swarm, no need for an actual net, simply do a weighted sum
+        """
         i = 0
         while not self.is_game_over():# and i < round_limit:
             i += 1
@@ -231,8 +237,8 @@ class Board:
                     self.drop_at(pos, 1, fejk=True)
                     net_inp = self._evaluate()
 
-                    if net is None and metrics is not None:
-                        fit = self.eval_fitness(net_inp, metrics);
+                    if net is None and weights is not None:
+                        fit = self.eval_fitness(net_inp, weights);
                     else:
                         fit = net.activate(net_inp)
 

@@ -27,7 +27,7 @@ def eval_genomes(genome, config):
     return fit / 1
 
 def run(config_file):
-    # Load configuration.
+    # Load configuration
     config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_file)
